@@ -6,6 +6,8 @@ const compression = require("compression");
 const rateLimit = require("express-rate-limit");
 const jwt = require("jsonwebtoken");
 const expressJwt = require("express-jwt");
+const cookieParser = require('cookie-parser')
+
 
 
 const pool = require('./database');
@@ -14,6 +16,9 @@ const pool = require('./database');
 const app = express();
 
 
+
+
+const SECRET="DAEDRAMAREomaSUKARItaDECocoedokkaebiDaRiUsconIgniteyFaNtasMal"
 
 
 
@@ -28,6 +33,63 @@ const limiter = rateLimit({
 });
 
 
+// admin rights checker
+
+
+const adminAuth = async(req, res, next) => {
+ 
+  const id=req.user.id
+  console.log(id)
+
+ await pool.query('SELECT * FROM users WHERE id = ?', [id],(error,result)=>{
+  const posibleAdmin=result[0]
+  if(posibleAdmin.isadmin=="true"){
+    console.log("Authorized user")
+    next()
+  }else{
+    res.send("user not authorized")
+  }
+  
+});
+
+
+  // if (!token.) {
+  //   return res.sendStatus(403);
+  // }
+  // else{
+   
+  //   try {
+  //     const data = jwt.verify(token, SECRET);
+  //     req.user=data
+  //     console.log(`auth Completed, welcome ${data.usuario}`)
+  //     return next();
+  //   } catch {
+  //     return res.sendStatus(403);
+  //   }
+   
+  // }
+};
+
+// authorization
+const authorization = (req, res, next) => {
+ 
+  const token = req.cookies.access_token;
+  if (!token) {
+    return res.sendStatus(403);
+  }
+  else{
+   
+    try {
+      const data = jwt.verify(token, SECRET);
+      req.user=data
+      console.log(`auth Completed, welcome ${data.usuario}`)
+      return next();
+    } catch {
+      return res.sendStatus(403);
+    }
+   
+  }
+};
 
 
 
@@ -40,31 +102,31 @@ app.use(cors());
 app.use(helmet()); 
 app.use(compression());
 app.use(limiter)
-
+app.use(cookieParser())
 
 // secreto
-const SECRET="DAEDRAMAREomaSUKARItaDECocoedokkaebiDaRiUsconIgniteyFaNtasMal"
+
 
 
 
 
 // protect endpoints with express-jwt middleware
 
-app.use(
-  expressJwt({
-    secret: SECRET,
-    algorithms: ["HS256"],
-  }).unless({
-    path: ["/login", "/register"],
-  })
-);
+// app.use(
+//   expressJwt({
+//     secret: SECRET,
+//     algorithms: ["HS256"],
+//   }).unless({
+//     path: ["/login", "/register"],
+//   })
+// );
 
 
 
 
 
 // get all the menu
-app.get('/platos', (req, res) => {
+app.get('/platos',authorization, (req, res) => {
   pool.query('SELECT * FROM platos', (error, result) => {
       if (error) throw error;
       console.log(req.user)
@@ -73,7 +135,7 @@ app.get('/platos', (req, res) => {
 });
 
 // select food by id
-app.get('/platos/:id', (req, res) => {
+app.get('/platos/:id',authorization, (req, res) => {
   const id=req.params.id
   pool.query('SELECT * FROM platos WHERE id =?',[id], (error, result) => {
       if (error) throw error;
@@ -83,7 +145,7 @@ app.get('/platos/:id', (req, res) => {
 
 
 // add a dish
-app.post('/platos',async(req, res) => {
+app.post('/platos',authorization,adminAuth,async(req, res) => {
   const {nombre,precio,url} = req.body;
 
   const newPlato = {
@@ -98,7 +160,7 @@ app.post('/platos',async(req, res) => {
 
 
 // update dish
-app.put('/platos/:id', async (req, res) => {
+app.put('/platos/:id',authorization,adminAuth, async (req, res) => {
   const { id } = req.params;
   const {nombre,precio,url} = req.body;
   const newPlato = {
@@ -114,17 +176,19 @@ app.put('/platos/:id', async (req, res) => {
 
 
 // Delete dish
-app.delete("/platos/:id",async(req,res)=>{
+app.delete("/platos/:id",authorization,adminAuth,async(req,res)=>{
   const { id } = req.params;
   await pool.query('DELETE FROM platos WHERE id = ?', [id]);
   res.send(`Deleted dish successfully`)
 });
 
 
+/////////////////////////////////////////////////////////////////////////////
+
 
 
 // get all the users
-app.get('/users', async(req, res) => {
+app.get('/users',authorization,adminAuth, async(req, res) => {
  await pool.query('SELECT * FROM users', (error, result) => {
       if (error) throw error;
       
@@ -134,7 +198,7 @@ app.get('/users', async(req, res) => {
 
 
 // get my user
-app.get('/myuser', async(req, res) => {
+app.get('/myuser',authorization, async(req, res) => {
   console.log(req.user)
 const myuserid=req.user.id
   await pool.query('SELECT * FROM users WHERE id = ?', [myuserid],(error, result) => {
@@ -148,13 +212,12 @@ const myuserid=req.user.id
 
 // login
 app.post("/login",async(req,res)=>{
-
   const { email, password } = req.body;
-  console.log({ email, password })
-
+  // console.log({ email, password })
     await pool.query("SELECT * FROM users WHERE email = ?", [email],(error, result) => {
-      console.log(result[0])
-      if (error) res.status(401).json({ error: "compruebe correo y password" });
+     
+      if (error)  res.send(error);
+      // res.status(401).json({ error: "compruebe correo y password" });
       else if (result[0].password==password){
         console.log("logged in successfully")
         const token = jwt.sign(
@@ -166,29 +229,48 @@ app.post("/login",async(req,res)=>{
           SECRET,
           { expiresIn: "60m" }
         );
-    
-        res.status(200);
-        res.json({ token });
+        res.cookie("access_token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+        })
+        .status(200)
+        .json({ message: "Logged in successfully ",token});
       }
     });
-
-     
-
 });
+
+
+
+
+
+// logout
+app.get("/logout", authorization, (req, res) => {
+  return res
+    .clearCookie("access_token")
+    .status(200)
+    .json({ message: "Successfully logged out " });
+});
+
+
 
 
 // add new user / register
 app.post("/register",async(req,res)=>{
 
-  const {usuario,nombreCompleto,email,telefono,direccion,password} = req.body;
+  const {usuario,nombreCompleto,email,telefono,direccion,password,isadmin} = req.body;
   const newUser = {
     usuario,
     nombreCompleto,
     email,
     telefono,
     direccion,
-    password
+    password,
+    isadmin
   };
+
+if(!newUser.isadmin){
+  newUser.isadmin="false"
+}
 console.log(newUser)
   await pool.query("INSERT INTO users set ?", [newUser]),(error, result) => {
     if (error){
@@ -201,10 +283,10 @@ console.log(newUser)
 
 
 
-// AGREGAR delete my User con Req.user
+
 
 // delete user
-app.delete("/users/:id",async(req,res)=>{
+app.delete("/users/:id",authorization,adminAuth,async(req,res)=>{
   const { id } = req.params;
   await pool.query('DELETE FROM users WHERE id = ?', [id],(error, result) => {
     if (error) {
@@ -215,6 +297,22 @@ app.delete("/users/:id",async(req,res)=>{
     }
   });
 });
+
+
+// delete my user
+app.delete("/myuser",authorization,async(req,res)=>{
+  console.log(req.user)
+  const id=req.user.id
+  await pool.query('DELETE FROM users WHERE id = ?', [id],(error, result) => {
+    if (error) {
+      console.log(error)
+       res.send(`User with  id:${id} does not exist`);
+    }else{
+      res.send(`Deleted user with  id:${id} successfully`)
+    }
+  });
+});
+
 
 
 

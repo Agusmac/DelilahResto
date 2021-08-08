@@ -31,7 +31,8 @@ CREATE TABLE users (
     email VARCHAR(60) NOT NULL,
     telefono BIGINT NOT NULL,
     direccion VARCHAR(100) NOT NULL,
-    password VARCHAR(60) NOT NULL
+    password VARCHAR(60) NOT NULL,
+    isadmin VARCHAR(10) NOT NULL
 );
 
 ALTER TABLE users
@@ -43,12 +44,62 @@ MODIFY id INT(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT = 1;
 
 
 -- ALTER TABLE users
+-- ADD 
+-- ALTER TABLE users
+-- MODIFY isadmin VARCHAR(20) NOT NULL
+-- ALTER TABLE users
 -- MODIFY telefono BIGINT  NOT NULL;
 
 
--- INSERT INTO users (usuario,nombreCompleto,email,telefono,direccion,password) VALUES (
+-- INSERT INTO users (usuario,nombreCompleto,email,telefono,direccion,password,isadmin) VALUES (
 --     'Agusmac','Agustin Mac Rae',
 --     "agusmac40@gmail.com",3413524672,
 --     "Rioja 1047",
---     "Cocacola12"
+--     "Cocacola12",
+--     "true"
 -- );
+
+
+
+
+
+    -- {
+    --     "id": 4,
+    --     "usuario": "Messi",
+    --     "nombreCompleto": "Lionel Messi ",
+    --     "email": "leo@gmail.com",
+    --     "telefono": 3413625462,
+    --     "direccion": "Arroyo seco",
+    --     "password": "Dinho10",
+    --     "isadmin": null
+    -- },
+    -- {
+    --     "id": 6,
+    --     "usuario": "Agusmac",
+    --     "nombreCompleto": "Agustin Mac Rae",
+    --     "email": "agusmac40@gmail.com",
+    --     "telefono": 3413524672,
+    --     "direccion": "Rioja 1047",
+    --     "password": "Cocacola12",
+    --     "isadmin": null
+    -- },
+    -- {
+    --     "id": 8,
+    --     "usuario": "Narutovich",
+    --     "nombreCompleto": "Naruto Uzumaki",
+    --     "email": "naruzu@gmail.com",
+    --     "telefono": 127375790,
+    --     "direccion": "Aldea de la hoja al 1600",
+    --     "password": "Narutovich",
+    --     "isadmin": null
+    -- },
+    -- {
+    --     "id": 9,
+    --     "usuario": "eladmin",
+    --     "nombreCompleto": "dediscord",
+    --     "email": "admin@gmail.com",
+    --     "telefono": 123456789,
+    --     "direccion": "en la bajada del puente victoria",
+    --     "password": "admin",
+    --     "isadmin": null
+    -- }
