@@ -3,7 +3,6 @@ CREATE DATABASE delilah;
 USE delilah;
 
 
-
 CREATE TABLE platos (
     id INT(11) NOT NULL,
     nombre VARCHAR(60) NOT NULL,
@@ -18,6 +17,9 @@ MODIFY id INT(11) NOT NULL
 
 ALTER TABLE platos
 MODIFY id INT(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT = 1;
+
+-- ALTER TABLE users
+-- ADD PRIMARY KEY (id);
 
 -- INSERT INTO platos (nombre,precio,url) VALUES ('Papas Fritas c/ Cheddar',250,'https://truffle-assets.imgix.net/12851a77-papas-fritas-con-cheddar_l_es_thumbmp4.png');
 -- INSERT INTO platos (nombre,precio,url) VALUES ('Pizza-Especial',450,'https://st.depositphotos.com/1900347/4146/i/600/depositphotos_41466555-stock-photo-image-of-slice-of-pizza.jpg');

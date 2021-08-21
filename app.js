@@ -209,35 +209,85 @@ const myuserid=req.user.id
  });
 
 
-
 // login
 app.post("/login",async(req,res)=>{
   const { email, password } = req.body;
   // console.log({ email, password })
     await pool.query("SELECT * FROM users WHERE email = ?", [email],(error, result) => {
-     
-      if (error)  res.send(error);
-      // res.status(401).json({ error: "compruebe correo y password" });
-      else if (result[0].password==password){
-        console.log("logged in successfully")
-        const token = jwt.sign(
-          {
-            id: result[0].id,
-            email: result[0].email,
-            usuario: result[0].usuario,
-          },
-          SECRET,
-          { expiresIn: "60m" }
-        );
-        res.cookie("access_token", token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-        })
-        .status(200)
-        .json({ message: "Logged in successfully ",token});
-      }
+      console.log(result)
+      if(!result[0]){res.send("user not found")
+    }else if(error){res.send({error})
+    }else{
+      console.log(result)
+      passChecker(result)
+    }
     });
+
+
+
+      function passChecker(result){
+        if (result[0].password==password){
+          console.log("logged in successfully")
+          const token = jwt.sign(
+            {
+              id: result[0].id,
+              email: result[0].email,
+              usuario: result[0].usuario,
+            },
+            SECRET,
+            { expiresIn: "60m" }
+          );
+          res.cookie("access_token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+          })
+          .status(200)
+          .json({ message: "Logged in successfully ",token});
+        }else{
+            res.status(401).json({ error: "compruebe correo y password" });
+        }
+      }
+      
+     
+    
 });
+
+
+
+
+
+// // login
+// app.post("/login",async(req,res)=>{
+//   const { email, password } = req.body;
+//   // console.log({ email, password })
+//     await pool.query("SELECT * FROM users WHERE email = ?", [email],(error, result) => {
+     
+//       if (error)  res.send(error);
+//       // res.status(401).json({ error: "compruebe correo y password" });
+//       else if (result[0].password==password){
+//         console.log("logged in successfully")
+//         const token = jwt.sign(
+//           {
+//             id: result[0].id,
+//             email: result[0].email,
+//             usuario: result[0].usuario,
+//           },
+//           SECRET,
+//           { expiresIn: "60m" }
+//         );
+//         res.cookie("access_token", token, {
+//           httpOnly: true,
+//           secure: process.env.NODE_ENV === "production",
+//         })
+//         .status(200)
+//         .json({ message: "Logged in successfully ",token});
+//       }
+//     });
+// });
+
+
+
+
 
 
 
@@ -312,6 +362,121 @@ app.delete("/myuser",authorization,async(req,res)=>{
     }
   });
 });
+
+
+// ////////////PEDIDOS//////////////////////////
+
+
+// id
+// userId:"",
+// status:"",
+// timestamp
+// preciofinal
+// address
+
+
+let items=""
+
+let finalPrice=0
+
+app.post("/additem",authorization,async(req,res)=>{
+  const id=req.body.id;
+  const quantity=req.body.quantity;
+
+  // console.log(id,quantity)
+  await pool.query("SELECT * FROM platos WHERE id = ?", [id],(error, result) => {
+    // console.log(result[0],quantity)
+    finalPrice+=(result[0].precio*quantity)
+    
+    items+=`${result[0].nombre} x${quantity}, `
+    // console.log(items)
+    // console.log(new Date().getHours())
+    // console.log(new Date().getMinutes())
+    res.send(`${result[0].nombre} x${quantity} added correctly,actual price is ${finalPrice}`)
+    
+  })
+})
+
+
+
+
+
+app.post("/orders",authorization,async(req,res)=>{
+
+  
+  console.log(req.user)
+ let today = new Date();
+ let time = today.getHours() + ":" + today.getMinutes()
+ 
+
+  await pool.query("SELECT * from users WHERE id = ?",[req.user.id],(error,result)=>{
+    createOrder(result[0].direccion)
+ 
+})
+
+
+  function createOrder(dir){
+    const newOrder = {
+      userId:req.user.id,
+      timeStamp:time,
+      itemlist:items,
+      status:"New",
+      price:finalPrice,
+      payMethod:req.body.payMethod,
+      address:dir
+    }
+
+    console.log(newOrder)
+resetOrder()
+res.send({newOrder})
+  }
+ 
+
+//   await pool.query("INSERT INTO platos set ?", [newOrder]),(error, result) => {
+//     if (error){
+//       throw error
+//     }
+// }
+//   res.send(`Added ${newUser.usuario} successfully`)
+});
+
+
+
+
+// see all orders made (admin)
+
+app.get("/orders",authorization,adminAuth,async(req,res)=>{
+
+
+})
+
+
+
+
+
+function resetOrder(){
+ items=""
+ finalPrice=0
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
