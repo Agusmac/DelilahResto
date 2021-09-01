@@ -1,13 +1,16 @@
+require('dotenv').config()
 const mysql = require("mysql");
 
 
-const pass='Cocacola12'
+const {pass,host,user,database}=process.env
+
+// console.log({pass,host,user,database})
 
 const config = {
-  host: 'localhost',
-  user: 'root',
+  host: host,
+  user: user,
   password:pass,
-  database: 'delilah',
+  database: database,
 };
 
 
