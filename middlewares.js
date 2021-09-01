@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const pool = require('./database');
+const rateLimit = require("express-rate-limit");
 
 const { SECRET } = process.env
 
@@ -21,21 +22,7 @@ const adminAuth = async (req, res, next) => {
 
     });
 
-    // if (!token.) {
-    //   return res.sendStatus(403);
-    // }
-    // else{
 
-    //   try {
-    //     const data = jwt.verify(token, SECRET);
-    //     req.user=data
-    //     console.log(`auth Completed, welcome ${data.usuario}`)
-    //     return next();
-    //   } catch {
-    //     return res.sendStatus(403);
-    //   }
-
-    // }
 };
 
 // authorization
@@ -58,7 +45,20 @@ const authorization = (req, res, next) => {
 
     }
 };
+
+// rate limiter
+const limiter = rateLimit({
+    windowMs: 10 * 1000,
+    max: 2,
+    message: "Excediste el numero de peticiones intenta mas tarde",
+  });
+  
+
+
+
+
 module.exports={
     adminAuth,
     authorization,
+    limiter
 }
