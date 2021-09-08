@@ -49,7 +49,7 @@ const authorization = (req, res, next) => {
 // rate limiter
 const limiter = rateLimit({
     windowMs: 10 * 1000,
-    max: 2,
+    max: 5,
     message: "Excediste el numero de peticiones intenta mas tarde",
   });
   

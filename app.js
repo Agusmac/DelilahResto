@@ -8,7 +8,7 @@ const compression = require("compression");
 const jwt = require("jsonwebtoken");
 // const expressJwt = require("express-jwt");
 const cookieParser = require('cookie-parser')
-const { adminAuth, authorization,limiter } = require("./middlewares")
+const { adminAuth, authorization, limiter } = require("./middlewares")
 
 const pool = require('./database');
 
@@ -165,37 +165,6 @@ app.post("/login", async (req, res) => {
 });
 
 
-
-// // login
-// app.post("/login",async(req,res)=>{
-//   const { email, password } = req.body;
-//   // console.log({ email, password })
-//     await pool.query("SELECT * FROM users WHERE email = ?", [email],(error, result) => {
-
-//       if (error)  res.send(error);
-//       // res.status(401).json({ error: "compruebe correo y password" });
-//       else if (result[0].password==password){
-//         console.log("logged in successfully")
-//         const token = jwt.sign(
-//           {
-//             id: result[0].id,
-//             email: result[0].email,
-//             usuario: result[0].usuario,
-//           },
-//           SECRET,
-//           { expiresIn: "60m" }
-//         );
-//         res.cookie("access_token", token, {
-//           httpOnly: true,
-//           secure: process.env.NODE_ENV === "production",
-//         })
-//         .status(200)
-//         .json({ message: "Logged in successfully ",token});
-//       }
-//     });
-// });
-
-
 // logout
 app.get("/logout", authorization, (req, res) => {
   return res
@@ -234,10 +203,6 @@ app.post("/register", async (req, res) => {
 });
 
 
-
-
-
-
 // delete user
 app.delete("/users/:id", authorization, adminAuth, async (req, res) => {
   const { id } = req.params;
@@ -250,7 +215,6 @@ app.delete("/users/:id", authorization, adminAuth, async (req, res) => {
     }
   });
 });
-
 
 // delete my user
 app.delete("/myuser", authorization, async (req, res) => {
@@ -267,6 +231,96 @@ app.delete("/myuser", authorization, async (req, res) => {
 });
 
 
+
+var orderPrice = 0
+
+
+
+// ////////////PEDIDOS 2//////////////////////////
+
+app.post("/order", authorization, async (req, res) => {
+
+  const payMethod = req.body.payMethod;
+
+  let today = new Date();
+
+  // let date = today.getHours()+":"+ today.getMinutes()
+
+
+  const newOrder = {
+    precio_total: 0,
+    created_at: today,
+    estado: "New",
+    forma_pago: payMethod,
+    users_id: req.user.id
+  }
+
+
+  await pool.query("INSERT INTO pedidos set ?", [newOrder]), (error, result) => {
+    if (error) {
+      throw error
+    }
+  }
+
+
+  await pool.query('SELECT MAX(Id) FROM pedidos', (error, result) => {
+
+    // intermediate(result[0]['MAX(Id)'])
+    intermediate(result[0]['MAX(Id)']).then(()=>{
+      keeper("finish")
+    })
+    // .then(console.log("D"));
+      
+  });
+
+
+  async function intermediate(id) {
+    // (id)+1 to fix properly
+    const orderId = id + 1
+
+   
+    await Promise.all (req.body.items.map(async item => {
+      const { id, quantity } = item
+
+       const result = await pool.query('SELECT precio FROM platos WHERE id =?', [id])
+
+        console.log(result)
+        keeper(result[0].precio * quantity)
+
+      
+      // console.log(id,quantity)
+      console.log("A")
+    }))
+    console.log("B")
+  }
+  
+  console.log("C")
+  // keeper("finish")
+  res.send("order made correctly")
+
+
+})
+
+
+// .then(keeper(1)).then(keeper("finish"))
+
+
+function keeper(foodPrice) {
+  if (foodPrice == "finish") {
+    console.log("final Price: ", orderPrice)
+  } else {
+    orderPrice = orderPrice + foodPrice
+    console.log(orderPrice)
+  }
+
+}
+
+
+
+
+// ------------------
+
+
 // ////////////PEDIDOS//////////////////////////
 
 
@@ -278,70 +332,91 @@ app.delete("/myuser", authorization, async (req, res) => {
 // address
 
 
-let items = ""
+// let items = ""
 
-let finalPrice = 0
+// let finalPrice = 0
 
-app.post("/additem", authorization, async (req, res) => {
-  const id = req.body.id;
-  const quantity = req.body.quantity;
+// app.post("/additem", authorization, async (req, res) => {
+//   const id = req.body.id;
+//   const quantity = req.body.quantity;
 
-  // console.log(id,quantity)
-  await pool.query("SELECT * FROM platos WHERE id = ?", [id], (error, result) => {
-    // console.log(result[0],quantity)
-    finalPrice += (result[0].precio * quantity)
+//   // console.log(id,quantity)
+//   await pool.query("SELECT * FROM platos WHERE id = ?", [id], (error, result) => {
+//     // console.log(result[0],quantity)
+//     finalPrice += (result[0].precio * quantity)
 
-    items += `${result[0].nombre} x${quantity}, `
-    // console.log(items)
-    // console.log(new Date().getHours())
-    // console.log(new Date().getMinutes())
-    res.send(`${result[0].nombre} x${quantity} added correctly,actual price is ${finalPrice}`)
+//     items += `${result[0].nombre} x${quantity}, `
+//     // console.log(items)
+//     // console.log(new Date().getHours())
+//     // console.log(new Date().getMinutes())
+//     res.send(`${result[0].nombre} x${quantity} added correctly,actual price is ${finalPrice}`)
 
-  })
-})
-
-
+//   })
+// })
 
 
 
-app.post("/orders", authorization, async (req, res) => {
 
 
-  console.log(req.user)
-  let today = new Date();
-  let time = today.getHours() + ":" + today.getMinutes()
+// app.post("/orders", authorization, async (req, res) => {
 
 
-  await pool.query("SELECT * from users WHERE id = ?", [req.user.id], (error, result) => {
-    createOrder(result[0].direccion)
-
-  })
-
-
-  function createOrder(dir) {
-    const newOrder = {
-      userId: req.user.id,
-      timeStamp: time,
-      itemlist: items,
-      status: "New",
-      price: finalPrice,
-      payMethod: req.body.payMethod,
-      address: dir
-    }
-
-    console.log(newOrder)
-    resetOrder()
-    res.send({ newOrder })
-  }
+//   console.log(req.user)
+//   let today = new Date();
+//   let time = today.getHours() + ":" + today.getMinutes()
 
 
-  //   await pool.query("INSERT INTO platos set ?", [newOrder]),(error, result) => {
-  //     if (error){
-  //       throw error
-  //     }
-  // }
-  //   res.send(`Added ${newUser.usuario} successfully`)
-});
+//   await pool.query("SELECT * from users WHERE id = ?", [req.user.id], (error, result) => {
+//     createOrder(result[0].direccion)
+
+//   })
+
+
+
+
+//   // agregar activo?
+
+
+//   function createOrder(dir) {
+//     const newOrder = {
+//       userId: req.user.id,
+//       timeStamp: time,
+//       itemlist: items,
+//       status: "New",
+//       price: finalPrice,
+//       payMethod: req.body.payMethod,
+//       address: dir
+//     }
+
+//     console.log(newOrder)
+//     resetOrder()
+//     res.send({ newOrder })
+//   }
+
+
+//   //   await pool.query("INSERT INTO platos set ?", [newOrder]),(error, result) => {
+//   //     if (error){
+//   //       throw error
+//   //     }
+//   // }
+//   //   res.send(`Added ${newUser.usuario} successfully`)
+// });
+
+// -------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -352,11 +427,9 @@ app.get("/orders", authorization, adminAuth, async (req, res) => {
 
 })
 
-
 // see all active orders (admin)
 
 app.get("/orders/active", authorization, adminAuth, async (req, res) => {
-
 
 })
 
@@ -364,6 +437,11 @@ app.get("/orders/active", authorization, adminAuth, async (req, res) => {
 
 app.put("/orders/:id", authorization, adminAuth, async (req, res) => {
 
+})
+
+
+// cancel order  (admin)
+app.put("/orders/cancel/:id", authorization, adminAuth, async (req, res) => {
 
 })
 
@@ -376,10 +454,10 @@ app.put("/orders/:id", authorization, adminAuth, async (req, res) => {
 
 
 
-function resetOrder() {
-  items = ""
-  finalPrice = 0
-}
+// function resetOrder() {
+//   items = ""
+//   finalPrice = 0
+// }
 
 
 
