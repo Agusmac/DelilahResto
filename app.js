@@ -484,6 +484,7 @@ app.put("/orders/cancel/:id", authorization, adminAuth, async (req, res) => {
   res.send(`Canceled order: ${id}`)
 })
 
+// get my orders
 app.get("/myorders", authorization, async (req, res) => {
   await pool.query(`SELECT * FROM pedidos WHERE users_id=${req.user.id} AND estado <> "Canceled"`, (error, result) => {
     if(result[0]==undefined){
