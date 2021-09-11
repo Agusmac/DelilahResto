@@ -1,12 +1,9 @@
 require('dotenv').config()
 const express = require("express");
-// const bodyParser=require("body-parser")
 const cors = require("cors");
 const helmet = require("helmet");
 const compression = require("compression");
-// const rateLimit = require("express-rate-limit");
 const jwt = require("jsonwebtoken");
-// const expressJwt = require("express-jwt");
 const cookieParser = require('cookie-parser')
 const { adminAuth, authorization, limiter } = require("./middlewares")
 
@@ -16,12 +13,10 @@ const app = express();
 
 const { SECRET } = process.env
 
-const mysql = require("mysql");
+
+
 // middlewares globales
 
-
-// const jsonParser = bodyParser.json();
-// app.use(express.static("public"));
 app.use(express.json());
 app.use(cors());
 app.use(helmet());
@@ -30,17 +25,13 @@ app.use(limiter)
 app.use(cookieParser())
 
 
-
-
 // /////////////////////////////////////////////////////////////////
-
 
 
 // get all the menu
 app.get('/platos', authorization, (req, res) => {
   pool.query('SELECT * FROM platos', (error, result) => {
     if (error) throw error;
-    console.log(req.user)
     res.send(result);
   });
 });
@@ -54,10 +45,9 @@ app.get('/platos/:id', authorization, (req, res) => {
   });
 });
 
-
 // add a dish
 app.post('/platos', authorization, adminAuth, async (req, res) => {
-  const { nombre, precio, url } = req.body;
+  const { nombre, precio, url } = req.body; 
 
   const newPlato = {
     nombre,
@@ -68,7 +58,6 @@ app.post('/platos', authorization, adminAuth, async (req, res) => {
   await pool.query("INSERT INTO platos set ?", [newPlato]);
   res.send(`Uploaded ${newPlato.nombre} successfully`)
 });
-
 
 // update dish
 app.put('/platos/:id', authorization, adminAuth, async (req, res) => {
@@ -81,9 +70,7 @@ app.put('/platos/:id', authorization, adminAuth, async (req, res) => {
   };
   await pool.query('UPDATE platos set ? WHERE id = ?', [newPlato, id]);
   res.send(`Updated ${newPlato.nombre} successfully`)
-
 });
-
 
 // Delete dish
 app.delete("/platos/:id", authorization, adminAuth, async (req, res) => {
@@ -93,27 +80,21 @@ app.delete("/platos/:id", authorization, adminAuth, async (req, res) => {
 });
 
 
-/////////////////////////////////////////////////////////////////////////////
-
-
+////////USERS/////////////////////////////////////////////////////////////////////
 
 // get all the users
 app.get('/users', authorization, adminAuth, async (req, res) => {
   await pool.query('SELECT * FROM users', (error, result) => {
     if (error) throw error;
-
     res.send(result);
   });
 });
 
-
 // get my user
 app.get('/myuser', authorization, async (req, res) => {
-  console.log(req.user)
   const myuserid = req.user.id
   await pool.query('SELECT * FROM users WHERE id = ?', [myuserid], (error, result) => {
     if (error) throw error;
-
     res.send(result);
   });
 });
@@ -122,20 +103,15 @@ app.get('/myuser', authorization, async (req, res) => {
 // login
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
-  // console.log({ email, password })
   await pool.query("SELECT * FROM users WHERE email = ?", [email], (error, result) => {
-    // console.log(result)
     if (!result[0]) {
       res.send("user not found")
     } else if (error) {
       res.send({ error })
     } else {
-      // console.log(result)
       passChecker(result)
     }
   });
-
-
 
   function passChecker(result) {
     if (result[0].password == password) {
@@ -159,11 +135,7 @@ app.post("/login", async (req, res) => {
       res.status(401).json({ error: "compruebe correo y password" });
     }
   }
-
-
-
 });
-
 
 // logout
 app.get("/logout", authorization, (req, res) => {
@@ -172,8 +144,6 @@ app.get("/logout", authorization, (req, res) => {
     .status(200)
     .json({ message: "Successfully logged out " });
 });
-
-
 
 
 // add new user / register
@@ -193,7 +163,7 @@ app.post("/register", async (req, res) => {
   if (!newUser.isadmin) {
     newUser.isadmin = "false"
   }
-  console.log(newUser)
+  
   await pool.query("INSERT INTO users set ?", [newUser]), (error, result) => {
     if (error) {
       throw error
@@ -208,7 +178,6 @@ app.delete("/users/:id", authorization, adminAuth, async (req, res) => {
   const { id } = req.params;
   await pool.query('DELETE FROM users WHERE id = ?', [id], (error, result) => {
     if (error) {
-      console.log(error)
       res.send(`User with  id:${id} does not exist`);
     } else {
       res.send(`Deleted user with  id:${id} successfully`)
@@ -218,11 +187,9 @@ app.delete("/users/:id", authorization, adminAuth, async (req, res) => {
 
 // delete my user
 app.delete("/myuser", authorization, async (req, res) => {
-  console.log(req.user)
   const id = req.user.id
   await pool.query('DELETE FROM users WHERE id = ?', [id], (error, result) => {
     if (error) {
-      console.log(error)
       res.send(`User with  id:${id} does not exist`);
     } else {
       res.send(`Deleted user with  id:${id} successfully`)
@@ -230,117 +197,7 @@ app.delete("/myuser", authorization, async (req, res) => {
   });
 });
 
-
-
-
-
-
-
-// ////////////PEDIDOS 2//////////////////////////
-
-
-// app.post("/order", authorization, async (req, res) => {
-
-//   const payMethod = req.body.payMethod;
-
-//   let today = new Date();
-
-//   const newOrder = {
-//     precio_total: 0,
-//     created_at: today,
-//     estado: "New",
-//     forma_pago: payMethod,
-//     users_id: req.user.id
-//   }
-
-//   await pool.query("INSERT INTO pedidos set ?", [newOrder]), (error, result) => {
-//     console.log(result.insertId)
-//     if (error) {
-//       throw error
-//     }
-//     console.log(result.insertId)
-//   }
-
-
-
-
-//   // await pool.query('SELECT MAX(Id) FROM pedidos', (error, result) => {
-
-//   //   intermediate(result[0]['MAX(Id)'])
-//   //   .then(()=>{
-//   //     keeper("finish")
-//   //   })
-
-
-//   // });
-
-
-
-//   // (id)+1 to fix properly
-//   // const orderId = id + 1
-
-
-//   // let characterResponse = await fetch('http://swapi.co/api/people/2/')
-//   // let characterResponseJson = await characterResponse.json()
-//   // let films = await Promise.all(
-//   //   characterResponseJson.films.map(async filmUrl => {
-//   //     let filmResponse = await fetch(filmUrl)
-//   //     return filmResponse.json()
-//   //   })
-//   // )
-
-
-//   await Promise.all(req.body.items.map(async item => {
-//     const { id, quantity } = item
-
-//     await pool.query('SELECT precio FROM platos WHERE id =?', id, (error, result) => {
-//        keeper(result[0].precio * quantity)
-//        console.log()
-//     })
-
-//     console.log("A")
-//   }
-
-//   // console.log(films)
-
-//   )).then(()=>{
-//     keeper("finish")
-//   })
-
-//   await console.log("B")
-
-
-//   // console.log(brr)
-//   // .then(() => {
-//   //   keeper("finish")
-//   // })
-//   // keeper("finish")
-
-//   res.send("order made correctly")
-
-//   // keeper("finish")
-
-// })
-
-
-// function keeper(foodPrice) {
-//   if (foodPrice == "finish") {
-//     console.log("final Price: ", orderPrice)
-//   } else {
-//     orderPrice = orderPrice + foodPrice
-//     console.log(orderPrice)
-//   }
-
-// }
-
-
-
-
-
-
-
-// // .then(keeper(1)).then(keeper("finish"))
-
+// ////////////PEDIDOS //////////////////////////
 
 
 var orderPrice = 0
@@ -351,9 +208,6 @@ app.post("/orders", authorization, async (req, res) => {
 
   let today = new Date();
 
-  // let date = today.getHours()+":"+ today.getMinutes()
-
-
   const newOrder = {
     precio_total: 0,
     created_at: today,
@@ -362,18 +216,15 @@ app.post("/orders", authorization, async (req, res) => {
     users_id: req.user.id
   }
 
-
   await pool.query("INSERT INTO pedidos set ?", [newOrder]), (error, result) => {
     if (error) {
       throw error
     }
   }
 
-
   await pool.query('SELECT MAX(Id) FROM pedidos', (error, result) => {
     intermediate(result[0]['MAX(Id)'])
   });
-
 
   function intermediate(id) {
     // (id)+1 to fix properly
@@ -394,9 +245,7 @@ app.post("/orders", authorization, async (req, res) => {
       }
     })
     setTimeout(() => {
-
       keeper("finish")
-      console.log(orderPrice)
       res.send("order made correctly")
     }, 500);
   }
@@ -408,14 +257,9 @@ function keeper(foodPrice, orderId) {
     resetOrder()
   } else {
     orderPrice = orderPrice + foodPrice
-
     pool.query(`UPDATE pedidos set precio_total=${orderPrice} WHERE id = ?`, [orderId]);
-
-    console.log(orderPrice, orderId)
   }
 }
-
-
 
 // see all orders made (admin)
 app.get("/orders", authorization, adminAuth, async (req, res) => {
@@ -424,14 +268,11 @@ app.get("/orders", authorization, adminAuth, async (req, res) => {
   })
 })
 
-
-
 // see all active orders (admin)
-
 app.get("/orders/active", authorization, adminAuth, async (req, res) => {
   await pool.query('SELECT * FROM pedidos WHERE estado <> "Canceled" AND estado <> "Delivered"  ', (error, result) => {
-    if (error) console.log(error);
-    console.log("brr")
+    if (error) res.send(error);
+
     res.send(result)
   })
 })
@@ -447,8 +288,6 @@ app.put("/orders/update/:id", authorization, adminAuth, async (req, res) => {
 
   function orderUpdater(state, orderId) {
     // new-confirmed-being prepared-in delivery-delivered-canceled
-    // console.log(state, orderId)
-
     let newState = ""
 
     switch (state) {
@@ -471,7 +310,7 @@ app.put("/orders/update/:id", authorization, adminAuth, async (req, res) => {
         newState = "Canceled"
         break;
     }
-    // console.log(newState, orderId)
+    
     pool.query(`UPDATE pedidos SET estado = ? WHERE id = ?`, [newState, orderId]);
     res.send(`Updated order ${orderId} state to: ${newState}`)
   }
@@ -487,9 +326,9 @@ app.put("/orders/cancel/:id", authorization, adminAuth, async (req, res) => {
 // get my orders
 app.get("/myorders", authorization, async (req, res) => {
   await pool.query(`SELECT * FROM pedidos WHERE users_id=${req.user.id} AND estado <> "Canceled"`, (error, result) => {
-    if(result[0]==undefined){
+    if (result[0] == undefined) {
       res.send(`No active orders from ${req.user.usuario}`)
-    }else{
+    } else {
       res.send(result)
     }
   })
