@@ -16,7 +16,7 @@ const app = express();
 
 const { SECRET } = process.env
 
-
+const mysql = require("mysql");
 // middlewares globales
 
 
@@ -124,13 +124,13 @@ app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   // console.log({ email, password })
   await pool.query("SELECT * FROM users WHERE email = ?", [email], (error, result) => {
-    console.log(result)
+    // console.log(result)
     if (!result[0]) {
       res.send("user not found")
     } else if (error) {
       res.send({ error })
     } else {
-      console.log(result)
+      // console.log(result)
       passChecker(result)
     }
   });
@@ -232,13 +232,120 @@ app.delete("/myuser", authorization, async (req, res) => {
 
 
 
-var orderPrice = 0
+
 
 
 
 // ////////////PEDIDOS 2//////////////////////////
 
-app.post("/order", authorization, async (req, res) => {
+
+// app.post("/order", authorization, async (req, res) => {
+
+//   const payMethod = req.body.payMethod;
+
+//   let today = new Date();
+
+//   const newOrder = {
+//     precio_total: 0,
+//     created_at: today,
+//     estado: "New",
+//     forma_pago: payMethod,
+//     users_id: req.user.id
+//   }
+
+//   await pool.query("INSERT INTO pedidos set ?", [newOrder]), (error, result) => {
+//     console.log(result.insertId)
+//     if (error) {
+//       throw error
+//     }
+//     console.log(result.insertId)
+//   }
+
+
+
+
+//   // await pool.query('SELECT MAX(Id) FROM pedidos', (error, result) => {
+
+//   //   intermediate(result[0]['MAX(Id)'])
+//   //   .then(()=>{
+//   //     keeper("finish")
+//   //   })
+
+
+//   // });
+
+
+
+//   // (id)+1 to fix properly
+//   // const orderId = id + 1
+
+
+//   // let characterResponse = await fetch('http://swapi.co/api/people/2/')
+//   // let characterResponseJson = await characterResponse.json()
+//   // let films = await Promise.all(
+//   //   characterResponseJson.films.map(async filmUrl => {
+//   //     let filmResponse = await fetch(filmUrl)
+//   //     return filmResponse.json()
+//   //   })
+//   // )
+
+
+//   await Promise.all(req.body.items.map(async item => {
+//     const { id, quantity } = item
+
+//     await pool.query('SELECT precio FROM platos WHERE id =?', id, (error, result) => {
+//        keeper(result[0].precio * quantity)
+//        console.log()
+//     })
+
+//     console.log("A")
+//   }
+
+//   // console.log(films)
+
+//   )).then(()=>{
+//     keeper("finish")
+//   })
+
+//   await console.log("B")
+
+
+//   // console.log(brr)
+//   // .then(() => {
+//   //   keeper("finish")
+//   // })
+//   // keeper("finish")
+
+//   res.send("order made correctly")
+
+//   // keeper("finish")
+
+// })
+
+
+// function keeper(foodPrice) {
+//   if (foodPrice == "finish") {
+//     console.log("final Price: ", orderPrice)
+//   } else {
+//     orderPrice = orderPrice + foodPrice
+//     console.log(orderPrice)
+//   }
+
+// }
+
+
+
+
+
+
+
+// // .then(keeper(1)).then(keeper("finish"))
+
+
+
+var orderPrice = 0
+
+app.post("/orders", authorization, async (req, res) => {
 
   const payMethod = req.body.payMethod;
 
@@ -264,185 +371,127 @@ app.post("/order", authorization, async (req, res) => {
 
 
   await pool.query('SELECT MAX(Id) FROM pedidos', (error, result) => {
-
-    // intermediate(result[0]['MAX(Id)'])
-    intermediate(result[0]['MAX(Id)']).then(()=>{
-      keeper("finish")
-    })
-    // .then(console.log("D"));
-      
+    intermediate(result[0]['MAX(Id)'])
   });
 
 
-  async function intermediate(id) {
+  function intermediate(id) {
     // (id)+1 to fix properly
     const orderId = id + 1
 
-   
-    await Promise.all (req.body.items.map(async item => {
+    req.body.items.map(item => {
       const { id, quantity } = item
+      const newPedido = {
+        pedidos_id: orderId,
+        platos_id: id,
+        cantidad: quantity
+      }
+      pool.query('SELECT precio FROM platos WHERE id =?', id, (error, result) => {
+        keeper(result[0].precio * quantity, orderId)
+      })
+      pool.query("INSERT INTO pedidos_has_platos set ?", [newPedido]), (error, result) => {
+        if (error) throw error;
+      }
+    })
+    setTimeout(() => {
 
-       const result = await pool.query('SELECT precio FROM platos WHERE id =?', [id])
-
-        console.log(result)
-        keeper(result[0].precio * quantity)
-
-      
-      // console.log(id,quantity)
-      console.log("A")
-    }))
-    console.log("B")
+      keeper("finish")
+      console.log(orderPrice)
+      res.send("order made correctly")
+    }, 500);
   }
-  
-  console.log("C")
-  // keeper("finish")
-  res.send("order made correctly")
-
-
 })
 
 
-// .then(keeper(1)).then(keeper("finish"))
-
-
-function keeper(foodPrice) {
+function keeper(foodPrice, orderId) {
   if (foodPrice == "finish") {
-    console.log("final Price: ", orderPrice)
+    resetOrder()
   } else {
     orderPrice = orderPrice + foodPrice
-    console.log(orderPrice)
-  }
 
+    pool.query(`UPDATE pedidos set precio_total=${orderPrice} WHERE id = ?`, [orderId]);
+
+    console.log(orderPrice, orderId)
+  }
 }
 
 
 
-
-// ------------------
-
-
-// ////////////PEDIDOS//////////////////////////
-
-
-// id
-// userId:"",
-// status:"",
-// timestamp
-// preciofinal
-// address
-
-
-// let items = ""
-
-// let finalPrice = 0
-
-// app.post("/additem", authorization, async (req, res) => {
-//   const id = req.body.id;
-//   const quantity = req.body.quantity;
-
-//   // console.log(id,quantity)
-//   await pool.query("SELECT * FROM platos WHERE id = ?", [id], (error, result) => {
-//     // console.log(result[0],quantity)
-//     finalPrice += (result[0].precio * quantity)
-
-//     items += `${result[0].nombre} x${quantity}, `
-//     // console.log(items)
-//     // console.log(new Date().getHours())
-//     // console.log(new Date().getMinutes())
-//     res.send(`${result[0].nombre} x${quantity} added correctly,actual price is ${finalPrice}`)
-
-//   })
-// })
-
-
-
-
-
-// app.post("/orders", authorization, async (req, res) => {
-
-
-//   console.log(req.user)
-//   let today = new Date();
-//   let time = today.getHours() + ":" + today.getMinutes()
-
-
-//   await pool.query("SELECT * from users WHERE id = ?", [req.user.id], (error, result) => {
-//     createOrder(result[0].direccion)
-
-//   })
-
-
-
-
-//   // agregar activo?
-
-
-//   function createOrder(dir) {
-//     const newOrder = {
-//       userId: req.user.id,
-//       timeStamp: time,
-//       itemlist: items,
-//       status: "New",
-//       price: finalPrice,
-//       payMethod: req.body.payMethod,
-//       address: dir
-//     }
-
-//     console.log(newOrder)
-//     resetOrder()
-//     res.send({ newOrder })
-//   }
-
-
-//   //   await pool.query("INSERT INTO platos set ?", [newOrder]),(error, result) => {
-//   //     if (error){
-//   //       throw error
-//   //     }
-//   // }
-//   //   res.send(`Added ${newUser.usuario} successfully`)
-// });
-
-// -------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // see all orders made (admin)
-
 app.get("/orders", authorization, adminAuth, async (req, res) => {
-
-
+  await pool.query('SELECT * FROM pedidos ', (error, result) => {
+    res.send(result)
+  })
 })
+
+
 
 // see all active orders (admin)
 
 app.get("/orders/active", authorization, adminAuth, async (req, res) => {
-
+  await pool.query('SELECT * FROM pedidos WHERE estado <> "Canceled" AND estado <> "Delivered"  ', (error, result) => {
+    if (error) console.log(error);
+    console.log("brr")
+    res.send(result)
+  })
 })
+
 
 // update order state (admin)
+app.put("/orders/update/:id", authorization, adminAuth, async (req, res) => {
+  const id = req.params.id
+  await pool.query('SELECT estado FROM pedidos WHERE id =?', [id], (error, result) => {
+    if (error) throw error;
+    orderUpdater(result[0].estado, id);
+  });
 
-app.put("/orders/:id", authorization, adminAuth, async (req, res) => {
+  function orderUpdater(state, orderId) {
+    // new-confirmed-being prepared-in delivery-delivered-canceled
+    // console.log(state, orderId)
 
+    let newState = ""
+
+    switch (state) {
+      case "New":
+        newState = "Confirmed"
+        break;
+      case "Confirmed":
+        newState = "Being prepared"
+        break;
+      case "Being prepared":
+        newState = "In delivery"
+        break;
+      case "In delivery":
+        newState = "Delivered"
+        break;
+      case "Delivered":
+        newState = "Delivered"
+        break;
+      case "Canceled":
+        newState = "Canceled"
+        break;
+    }
+    // console.log(newState, orderId)
+    pool.query(`UPDATE pedidos SET estado = ? WHERE id = ?`, [newState, orderId]);
+    res.send(`Updated order ${orderId} state to: ${newState}`)
+  }
 })
 
-
-// cancel order  (admin)
+// cancel order by id  (admin)
 app.put("/orders/cancel/:id", authorization, adminAuth, async (req, res) => {
+  const id = req.params.id
+  pool.query(`UPDATE pedidos set estado="Canceled" WHERE id = ?`, [id]);
+  res.send(`Canceled order: ${id}`)
+})
 
+app.get("/myorders", authorization, async (req, res) => {
+  await pool.query(`SELECT * FROM pedidos WHERE users_id=${req.user.id} AND estado <> "Canceled"`, (error, result) => {
+    if(result[0]==undefined){
+      res.send(`No active orders from ${req.user.usuario}`)
+    }else{
+      res.send(result)
+    }
+  })
 })
 
 
@@ -452,37 +501,9 @@ app.put("/orders/cancel/:id", authorization, adminAuth, async (req, res) => {
 
 
 
-
-
-// function resetOrder() {
-//   items = ""
-//   finalPrice = 0
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+function resetOrder() {
+  orderPrice = 0
+}
 
 app.listen(3000, function () {
   console.log("Server started on port 3000");
