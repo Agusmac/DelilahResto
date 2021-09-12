@@ -17,8 +17,9 @@
 <p>Copy and paste the content of <strong>DelilahDB.sql</strong> on the MySql command line,you can do this from the MySql Workbench too</p>
 <h3>Install dependencies</h3>
 <p>Use this code on the projects console</p>
-`npm i`
+<code>npm i</code>
 <h3>Initiate Server</h3>
 <p>Use this code on the projects console</p>
-`node app.js`
+<code>node app.js</code>
+
 <h3>That's it, you can already use the Api locally with postman!</h3>
