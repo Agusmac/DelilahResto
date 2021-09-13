@@ -17,6 +17,9 @@
 <p>Copy and paste the content of <strong>DelilahDB.sql</strong> on the MySql command line,you can do this from the MySql Workbench too</p>
 <h3>Install dependencies</h3>
 <p>Use this code on the projects console</p>
+<h3>Set the environmental variables</h3>
+<p>make your own .env file based on the copy.env</p>
+<h3>Initiate Server</h3>
 <code>npm i</code>
 <h3>Initiate Server</h3>
 <p>Use this code on the projects console</p>
