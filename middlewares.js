@@ -7,9 +7,8 @@ const { SECRET } = process.env
 
 // admin rights checker
 const adminAuth = async (req, res, next) => {
-
     const id = req.user.id
-    console.log(id)
+    // console.log(id)
 
     await pool.query('SELECT * FROM users WHERE id = ?', [id], (error, result) => {
         const posibleAdmin = result[0]
@@ -19,10 +18,7 @@ const adminAuth = async (req, res, next) => {
         } else {
             res.send("user not authorized")
         }
-
     });
-
-
 };
 
 // authorization
@@ -53,9 +49,6 @@ const limiter = rateLimit({
     message: "Excediste el numero de peticiones intenta mas tarde",
   });
   
-
-
-
 
 module.exports={
     adminAuth,

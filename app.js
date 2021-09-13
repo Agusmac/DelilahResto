@@ -218,6 +218,7 @@ app.post("/orders", authorization, async (req, res) => {
 
   await pool.query("INSERT INTO pedidos set ?", [newOrder]), (error, result) => {
     if (error) {
+      res.send(error)
       throw error
     }
   }
@@ -238,13 +239,15 @@ app.post("/orders", authorization, async (req, res) => {
         cantidad: quantity
       }
       pool.query('SELECT precio FROM platos WHERE id =?', id, (error, result) => {
+        if (error) res.send(error);
         keeper(result[0].precio * quantity, orderId)
       })
       pool.query("INSERT INTO pedidos_has_platos set ?", [newPedido]), (error, result) => {
-        if (error) throw error;
+        if (error) res.send(error);
       }
     })
     setTimeout(() => {
+      console.log(orderPrice)
       keeper("finish")
       res.send("order made correctly")
     }, 500);
@@ -257,6 +260,7 @@ function keeper(foodPrice, orderId) {
     resetOrder()
   } else {
     orderPrice = orderPrice + foodPrice
+    console.log(orderPrice)
     pool.query(`UPDATE pedidos set precio_total=${orderPrice} WHERE id = ?`, [orderId]);
   }
 }
@@ -333,12 +337,6 @@ app.get("/myorders", authorization, async (req, res) => {
     }
   })
 })
-
-
-
-
-
-
 
 
 function resetOrder() {
