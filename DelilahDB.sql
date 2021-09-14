@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS `delilah`.`users` (
   `isadmin` VARCHAR(10) NOT NULL,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 7
+AUTO_INCREMENT = 1
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS `delilah`.`pedidos` (
     FOREIGN KEY (`users_id`)
     REFERENCES `delilah`.`users` (`id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 269
+AUTO_INCREMENT = 1
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS `delilah`.`platos` (
   `url` VARCHAR(250) NOT NULL,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 7
+AUTO_INCREMENT = 1
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
