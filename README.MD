@@ -8,7 +8,7 @@
 <li>MySQL</li>
 </ul>
 <h2>API Documentation</h2>
-<p>Open this <a href="https://app.swaggerhub.com/apis/Agusmac/DelilahRestoAPI/1.0.0">link</a> or the <strong>api-docs.yaml</strong> on the browser and copy it to swagger</p>
+<p>Open this swagger <a href="https://app.swaggerhub.com/apis/Agusmac/DelilahRestoAPI/1.0.0">link</a>,the postman <a href="https://documenter.getpostman.com/view/15566714/U16qHNPf">collection</a> or the <strong>api-docs.yaml</strong> on the browser and copy it to swagger</p>
 
 <h2>Instalation</h2>
 <h3>Clone Project</h3>
