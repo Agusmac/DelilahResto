@@ -47,7 +47,7 @@ app.get('/platos/:id', authorization, (req, res) => {
 
 // add a dish
 app.post('/platos', authorization, adminAuth, async (req, res) => {
-  const { nombre, precio, url } = req.body; 
+  const { nombre, precio, url } = req.body;
 
   const newPlato = {
     nombre,
@@ -163,7 +163,7 @@ app.post("/register", async (req, res) => {
   if (!newUser.isadmin) {
     newUser.isadmin = "false"
   }
-  
+
   await pool.query("INSERT INTO users set ?", [newUser]), (error, result) => {
     if (error) {
       throw error
@@ -265,16 +265,46 @@ function keeper(foodPrice, orderId) {
   }
 }
 
+
+
+
+
 // see all orders made (admin)
 app.get("/orders", authorization, adminAuth, async (req, res) => {
-  await pool.query('SELECT * FROM pedidos ', (error, result) => {
+  await pool.query(`
+  SELECT ped.id
+  , ped.precio_total
+  , min(ped.created_at) as created_at
+  , ped.estado
+  , ped.forma_pago
+  , ped.users_id
+  , group_concat(pla.nombre separator ', ') as platos
+  ,group_concat(cantidad separator 'x, ') as cantidad
+  FROM pedidos_has_platos php    
+  JOIN pedidos ped ON php.pedidos_id= ped.id    
+  JOIN platos pla ON php.platos_id = pla.id
+  group by ped.id, ped.precio_total, ped.estado, ped.forma_pago, ped.users_id`, (error, result) => {
     res.send(result)
   })
 })
 
 // see all active orders (admin)
 app.get("/orders/active", authorization, adminAuth, async (req, res) => {
-  await pool.query('SELECT * FROM pedidos WHERE estado <> "Canceled" AND estado <> "Delivered"  ', (error, result) => {
+  await pool.query(`
+  SELECT ped.id
+  , ped.precio_total
+  , min(ped.created_at) as created_at
+  , ped.estado
+  , ped.forma_pago
+  , ped.users_id
+  , group_concat(pla.nombre separator ', ') as platos
+  ,group_concat(cantidad separator 'x, ') as cantidad
+  FROM pedidos_has_platos php    
+  JOIN pedidos ped ON php.pedidos_id= ped.id    
+  JOIN platos pla ON php.platos_id = pla.id
+  group by ped.id, ped.precio_total, ped.estado, ped.forma_pago, ped.users_id
+  HAVING ped.estado <> "Canceled" AND estado <> "Delivered"
+  `, (error, result) => {
     if (error) res.send(error);
 
     res.send(result)
@@ -314,7 +344,7 @@ app.put("/orders/update/:id", authorization, adminAuth, async (req, res) => {
         newState = "Canceled"
         break;
     }
-    
+
     pool.query(`UPDATE pedidos SET estado = ? WHERE id = ?`, [newState, orderId]);
     res.send(`Updated order ${orderId} state to: ${newState}`)
   }
@@ -329,7 +359,14 @@ app.put("/orders/cancel/:id", authorization, adminAuth, async (req, res) => {
 
 // get my orders
 app.get("/myorders", authorization, async (req, res) => {
-  await pool.query(`SELECT * FROM pedidos WHERE users_id=${req.user.id} AND estado <> "Canceled"`, (error, result) => {
+  await pool.query(`SELECT ped.id, ped.precio_total, min(ped.created_at) as created_at, ped.estado, ped.forma_pago, ped.users_id, group_concat(pla.nombre separator ', ') as platos
+,group_concat(cantidad separator 'x, ') as cantidad
+FROM pedidos_has_platos php    
+JOIN pedidos ped ON php.pedidos_id= ped.id    
+JOIN platos pla ON php.platos_id = pla.id
+group by ped.id, ped.precio_total, ped.estado, ped.forma_pago, ped.users_id
+HAVING ped.users_id=${req.user.id} and ped.estado <> "Canceled"
+`, (error, result) => {
     if (result[0] == undefined) {
       res.send(`No active orders from ${req.user.usuario}`)
     } else {
