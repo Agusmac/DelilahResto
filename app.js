@@ -375,6 +375,14 @@ HAVING ped.users_id=${req.user.id} and ped.estado <> "Canceled"
   })
 })
 
+app.delete("/orders/delete/:id", authorization, adminAuth, async (req, res) => {
+  const { id } = req.params;
+  await pool.query('DELETE FROM pedidos_has_platos WHERE pedidos_id = ?', [id]);
+  await pool.query('DELETE FROM pedidos WHERE id = ?', [id]);
+  res.send(`Deleted order ${id} successfully`)
+})
+
+
 
 function resetOrder() {
   orderPrice = 0
