@@ -6,6 +6,14 @@ const { pass, host, user, database } = process.env
 
 // console.log({pass,host,user,database})
 
+//    host,     //host - localhost
+//    user,     //user name
+//    pass,  // password
+//    database: database, /database name
+
+
+
+
 const config = {
     host: host,
     user: user,
